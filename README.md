@@ -1,8 +1,8 @@
-<p align="center">
-  <img src="assets/banner.png" alt="ConnectCard Banner" width="600">
-</p>
-
 # ConnectCard 📶
+
+assets/banner.png: Professional branding logo.
+
+![ConnectCard Banner](assets/banner.png)
 
 <p align="center">
   <strong>Modern, professional Wi-Fi QR card generator for Web & CLI.</strong>
