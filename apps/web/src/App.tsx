@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { generateWifiString } from '@connectcard/core';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { generateWifiString, generateWifiPdf } from '@connectcard/core';
 import type { WifiConfig, WifiSecurity } from '@connectcard/core';
 import QRCode from 'qrcode';
 import { 
@@ -12,10 +13,13 @@ import {
   Moon, 
   Sun,
   Type,
-  Shield
+  Shield,
+  FileText,
+  Languages
 } from 'lucide-react';
 
 function App() {
+  const { t, i18n } = useTranslation();
   const [ssid, setSsid] = useState('');
   const [password, setPassword] = useState('');
   const [security, setSecurity] = useState<WifiSecurity>('WPA');
@@ -72,6 +76,24 @@ function App() {
     document.body.removeChild(link);
   };
 
+  const downloadPdf = async () => {
+    if (!qrDataUrl) return;
+    const config: WifiConfig = { ssid, password, security, hidden };
+    const pdfBytes = await generateWifiPdf(config, qrDataUrl);
+    const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `wifi-card-${ssid}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const toggleLanguage = () => {
+    const nextLng = i18n.language === 'en' ? 'tr' : 'en';
+    i18n.changeLanguage(nextLng);
+  };
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 md:p-8">
       {/* Background Decor */}
@@ -86,43 +108,54 @@ function App() {
             <Wifi size={24} />
           </div>
           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-400">
-            ConnectCard
+            {t('title')}
           </h1>
         </div>
         
-        <button 
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-        >
-          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={toggleLanguage}
+            title="Switch Language"
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-sm font-medium px-4"
+          >
+            <Languages size={18} />
+            <span className="uppercase">{i18n.language.split('-')[0]}</span>
+          </button>
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            title="Toggle Theme"
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+        </div>
       </header>
 
       <main className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Form Section */}
         <section className="space-y-6 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold">Network Details</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Enter your Wi-Fi credentials to generate a secure QR code.</p>
+            <h2 className="text-xl font-semibold">{t('subtitle')}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('desc')}</p>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
-                <Type size={16} className="text-primary-500" /> SSID (Network Name)
+                <Type size={16} className="text-primary-500" /> {t('ssid_label')}
               </label>
               <input 
                 type="text"
                 value={ssid}
                 onChange={(e) => setSsid(e.target.value)}
-                placeholder="e.g. My Home Wi-Fi"
+                placeholder={t('ssid_placeholder')}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none transition-all"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
-                <Shield size={16} className="text-primary-500" /> Security Type
+                <Shield size={16} className="text-primary-500" /> {t('security_label')}
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {['WPA', 'WEP', 'nopass'].map((type) => (
@@ -144,18 +177,19 @@ function App() {
             {security !== 'nopass' && (
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
-                  <Lock size={16} className="text-primary-500" /> Password
+                  <Lock size={16} className="text-primary-500" /> {t('password_label')}
                 </label>
                 <div className="relative">
                   <input 
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter network password"
+                    placeholder={t('password_placeholder')}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                   />
                   <button 
                     onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -173,7 +207,7 @@ function App() {
                 className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500"
               />
               <label htmlFor="hidden" className="text-sm text-slate-600 dark:text-slate-400">
-                Hidden Network
+                {t('hidden_label')}
               </label>
             </div>
           </div>
@@ -189,7 +223,7 @@ function App() {
               ) : (
                 <div className="text-center space-y-4 text-slate-400">
                   <Wifi size={64} className="mx-auto opacity-20" />
-                  <p className="text-sm italic">Enter SSID to see preview</p>
+                  <p className="text-sm italic">{t('preview_placeholder')}</p>
                 </div>
               )}
             </div>
@@ -199,16 +233,30 @@ function App() {
             <button 
               disabled={!qrDataUrl}
               onClick={downloadQR}
+              title="Download as PNG"
               className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all ${
                 qrDataUrl 
                   ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30 hover:scale-105 active:scale-95' 
                   : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
               }`}
             >
-              <Download size={20} /> Download PNG
+              <Download size={20} /> {t('download_png')}
             </button>
             <button 
               disabled={!qrDataUrl}
+              onClick={downloadPdf}
+              title="Download as PDF"
+              className={`flex items-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all ${
+                qrDataUrl 
+                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30 hover:scale-105 active:scale-95' 
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <FileText size={20} /> {t('download_pdf')}
+            </button>
+            <button 
+              disabled={!qrDataUrl}
+              title="Share"
               className="p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
             >
               <Share2 size={20} />
@@ -218,7 +266,7 @@ function App() {
       </main>
 
       <footer className="mt-20 text-slate-400 text-sm flex flex-col items-center gap-4">
-        <p>&copy; 2026 ConnectCard. Built with TypeScript & React.</p>
+        <p>&copy; 2026 {t('title')}. {t('footer')}</p>
         <div className="flex items-center gap-4">
           <a href="#" className="hover:text-primary-500 transition-colors">Documentation</a>
           <span>•</span>
