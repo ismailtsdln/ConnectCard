@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="banner.png" alt="ConnectCard Banner" width="600">
+  <img src="assets/banner.png" alt="ConnectCard Banner" width="600">
 </p>
 
 # ConnectCard 📶
