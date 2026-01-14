@@ -1,7 +1,5 @@
 # ConnectCard 📶
 
-assets/banner.png: Professional branding logo.
-
 ![ConnectCard Banner](assets/banner.png)
 
 <p align="center">
